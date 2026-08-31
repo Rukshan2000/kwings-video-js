@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InvoGen — Reel 9:16</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<style>
+:root{
+  --ink:#0F172A; --body:#334155; --mut:#64748B; --line:#E2E8F0;
+  --ground:#F1F5F9; --surf:#FFFFFF; --ok:#DC2626; --bad:#B45309; --wa:#DC2626;
+  --disp:"Inter Tight","Inter",-apple-system,sans-serif;
+  --txt:"Inter",-apple-system,system-ui,sans-serif;
+  --mono:"Roboto Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#E7ECF2;color:var(--ink);font-family:var(--txt);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:22px 16px 30px}
+.shell{width:min(1180px,100%);display:flex;flex-direction:column;gap:12px}
+
+.stage{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:18px;
+  background:var(--ground);isolation:isolate;
+  box-shadow:0 0 0 1px var(--line),0 40px 90px -50px rgba(15,23,42,.45)}
+
+/* ---------- ambient ---------- */
+.wash{position:absolute;inset:-12%;z-index:0;filter:blur(70px);opacity:.55;pointer-events:none}
+.wash i{position:absolute;border-radius:50%;display:block}
+.w1{width:46%;height:66%;left:-6%;top:-14%;background:rgba(220,38,38,.16)}
+.w2{width:52%;height:70%;right:-10%;bottom:-20%;background:rgba(15,23,42,.10)}
+.w3{width:36%;height:52%;left:38%;top:28%;background:rgba(220,38,38,.10)}
+.mesh{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(15,23,42,.05) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(15,23,42,.05) 1px,transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(120% 90% at 50% 40%,#000 30%,transparent 78%);
+          mask-image:radial-gradient(120% 90% at 50% 40%,#000 30%,transparent 78%)}
+.grain{position:absolute;inset:0;z-index:11;pointer-events:none;opacity:.045;mix-blend-mode:multiply;
+  background-image:repeating-linear-gradient(0deg,rgba(15,23,42,.6) 0 1px,transparent 1px 3px)}
+.vig{position:absolute;inset:0;z-index:10;pointer-events:none;
+  background:radial-gradient(125% 95% at 50% 45%,transparent 58%,rgba(15,23,42,.10) 100%)}
+.flash{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;background:#fff}
+
+/* ---------- scenes ---------- */
+.scene{position:absolute;inset:0;opacity:0;pointer-events:none;z-index:2;
+  display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:44px;
+  padding:64px 74px 118px;will-change:opacity,transform}
+.scene.solo{grid-template-columns:1fr;justify-items:center;text-align:center}
+.copy{display:flex;flex-direction:column;gap:14px;max-width:520px}
+.art{position:relative;display:flex;align-items:center;justify-content:center}
+
+.kick{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+  font:600 11.5px/1 var(--txt);letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.kick::before{content:"";width:22px;height:2px;background:var(--ok);border-radius:2px}
+.solo .kick{align-self:center}
+h1{margin:0;font-family:var(--disp);font-weight:800;letter-spacing:-.03em;line-height:1.02;
+  font-size:clamp(28px,4.6vw,58px);color:var(--ink)}
+h1 .g{color:var(--ok)}
+.si{margin:0;font-family:var(--disp);font-weight:700;line-height:1.16;letter-spacing:-.02em;
+  font-size:clamp(19px,2.5vw,32px);color:var(--ink)}
+.si em{font-style:normal;font-family:var(--disp);color:var(--ok)}
+.lede{margin:0;font-size:clamp(13px,1.35vw,17px);line-height:1.55;color:var(--body);max-width:44ch}
+.rule{height:3px;width:0;background:linear-gradient(90deg,var(--ok),rgba(220,38,38,0));border-radius:3px}
+.w{display:inline-block;white-space:pre;transform-origin:50% 100%;backface-visibility:hidden}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{opacity:0;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;
+  background:var(--surf);border:1px solid var(--line);font:600 12px/1 var(--txt);color:var(--body);
+  box-shadow:0 8px 18px -14px rgba(15,23,42,.5)}
+.chip i{width:6px;height:6px;border-radius:50%;background:var(--ok);display:block}
+
+/* ---------- generic UI furniture ---------- */
+.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 30px 60px -40px rgba(15,23,42,.5)}
+.bar{position:relative;height:30px;border-bottom:1px solid var(--line);display:flex;align-items:center;
+  gap:6px;padding:0 12px;background:#FAFCFE;border-radius:14px 14px 0 0}
+.bar i{width:8px;height:8px;border-radius:50%;background:#E2E8F0;display:block}
+.bar span{margin-left:8px;font:500 10.5px/1 var(--mono);color:var(--mut)}
+.rowline{height:8px;border-radius:4px;background:#EEF2F7}
+
+/* scene 1 — the old word file */
+.docstack{position:relative;width:min(430px,100%)}
+.doc{padding:0 0 16px;transform-origin:50% 50%}
+.doc .pg{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.doc h4{margin:0;font:800 15px/1.2 var(--disp);letter-spacing:-.01em}
+.wrong{position:relative;display:inline-block;font:600 12px/1.3 var(--mono);color:var(--bad);
+  padding:2px 6px;border-radius:5px;background:rgba(180,83,9,.08)}
+.strike{position:absolute;left:4%;right:4%;top:50%;height:2px;background:var(--bad);
+  transform:scaleX(0);transform-origin:0 50%;border-radius:2px;opacity:.9}
+.ghost{position:absolute;inset:0;opacity:0;border-radius:14px;border:1px dashed rgba(15,23,42,.25)}
+.tag{position:absolute;padding:5px 9px;border-radius:8px;font:700 10.5px/1 var(--txt);
+  background:var(--bad);color:#fff;opacity:0;white-space:nowrap;
+  box-shadow:0 12px 24px -14px rgba(180,83,9,.9)}
+
+/* scene 2 — three mistakes */
+.mist{display:grid;gap:12px;width:min(430px,100%)}
+.mrow{opacity:0;display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:12px;
+  background:var(--surf);border:1px solid var(--line);box-shadow:0 20px 40px -34px rgba(15,23,42,.6)}
+.mrow .x{flex:0 0 26px;height:26px;border-radius:50%;background:rgba(180,83,9,.1);color:var(--bad);
+  display:grid;place-items:center;font:700 14px/1 var(--txt)}
+.mrow b{font:600 13.5px/1.3 var(--txt);color:var(--ink)}
+.mrow small{display:block;font:500 11.5px/1.4 var(--mono);color:var(--mut);margin-top:2px}
+
+/* scene 3/4 — builder + preview */
+.build{position:relative;width:min(500px,100%);overflow:hidden}
+.build .pg{padding:14px 16px 16px}
+.li{opacity:0;display:grid;grid-template-columns:1fr 42px 74px;gap:10px;align-items:center;
+  padding:9px 0;border-bottom:1px solid #F1F5F9;font:500 12px/1 var(--txt);color:var(--body)}
+.li .amt{font-family:var(--mono);text-align:right;color:var(--ink);font-weight:600}
+.li .qty{font-family:var(--mono);text-align:center;color:var(--mut)}
+.tot{margin-top:11px;display:grid;gap:7px}
+.tot div{display:flex;justify-content:space-between;font:500 12px/1 var(--txt);color:var(--mut)}
+.tot div b{font:700 12px/1 var(--mono);color:var(--body)}
+.tot .grand{margin-top:5px;padding-top:9px;border-top:1px dashed var(--line)}
+.tot .grand span{font:700 13px/1 var(--txt);color:var(--ink)}
+.tot .grand b{font:700 19px/1 var(--mono);color:var(--ok)}
+.pdfcard{position:absolute;right:-2%;bottom:-4%;width:47%;opacity:0;transform-origin:100% 100%}
+.pdfcard .pg{padding:12px;display:flex;flex-direction:column;gap:7px}
+.pdfcard .rowline{height:6px}
+.equals{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:0;
+  font:800 13px/1 var(--disp);color:#fff;background:var(--ok);padding:8px 12px;border-radius:999px;
+  box-shadow:0 18px 34px -16px rgba(220,38,38,.9);white-space:nowrap;z-index:4}
+.srv{position:absolute;left:12px;top:-14px;opacity:0;padding:6px 10px;border-radius:999px;
+  background:var(--ink);color:#fff;font:600 10.5px/1 var(--mono);z-index:5}
+
+/* scene 5 — share link + sign */
+.pub{width:min(430px,100%);position:relative}
+.pub .pg{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.urlbar{opacity:0;display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:9px;
+  background:#F1F5F9;border:1px solid var(--line);font:500 11px/1 var(--mono);color:var(--mut);
+  overflow:hidden;white-space:nowrap}
+.urlbar i{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:0 0 auto}
+.signbox{position:relative;height:96px;border:1.5px dashed #CBD5E1;border-radius:10px;background:#FBFDFF;
+  display:grid;place-items:center;overflow:hidden}
+.signbox span{position:absolute;bottom:7px;left:0;right:0;text-align:center;
+  font:500 10px/1 var(--mono);letter-spacing:.1em;color:#94A3B8;text-transform:uppercase}
+.signbox svg{width:78%;height:64%;overflow:visible}
+.signbox path{fill:none;stroke:var(--ink);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.accepted{position:absolute;right:12px;top:-16px;opacity:0;display:flex;align-items:center;gap:6px;
+  padding:8px 13px;border-radius:999px;background:var(--ok);color:#fff;
+  font:700 12px/1 var(--txt);box-shadow:0 20px 40px -18px rgba(220,38,38,.95);z-index:5}
+.noacct{display:flex;gap:8px}
+
+/* scene 6 — convert */
+.conv{display:flex;align-items:center;gap:18px;width:min(520px,100%)}
+.dcard{flex:1;padding:15px 16px;opacity:0}
+.dcard .num{font:700 21px/1 var(--mono);letter-spacing:-.02em;color:var(--ink)}
+.dcard .lbl{margin-top:5px;font:600 10.5px/1 var(--txt);letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.dcard .st{margin-top:12px;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  font:700 10.5px/1 var(--txt)}
+.st.acc{background:rgba(220,38,38,.12);color:var(--ok)}
+.st.pen{background:rgba(15,23,42,.07);color:var(--mut)}
+.arrowbox{flex:0 0 auto;position:relative;display:grid;place-items:center;width:66px;height:66px;
+  border-radius:50%;background:var(--ink);color:#fff;opacity:0;
+  box-shadow:0 24px 48px -20px rgba(15,23,42,.9)}
+.arrowbox b{font:700 11px/1 var(--txt)}
+.link{position:absolute;left:0;right:0;bottom:-26px;height:1px;background:var(--line)}
+.linkw{position:absolute;left:50%;bottom:-38px;transform:translateX(-50%);opacity:0;
+  font:500 10.5px/1 var(--mono);color:var(--mut);background:var(--ground);padding:0 8px}
+
+/* scene 7 — dashboard */
+.dash{width:min(520px,100%)}
+.dash .pg{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.kpi{opacity:0;padding:10px 11px;border-radius:10px;background:#F8FAFC;border:1px solid var(--line)}
+.kpi small{display:block;font:600 9.5px/1 var(--txt);letter-spacing:.11em;text-transform:uppercase;color:var(--mut)}
+.kpi b{display:block;margin-top:6px;font:700 16px/1 var(--mono);color:var(--ink)}
+.kpi.good b{color:var(--ok)}
+.chart{position:relative;height:104px;border-radius:10px;background:#F8FAFC;border:1px solid var(--line);
+  display:flex;align-items:flex-end;gap:7px;padding:12px}
+.chart i{flex:1;height:0;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,#DC2626,#F87171);display:block}
+.statrow{display:flex;flex-direction:column;gap:7px}
+.strow{opacity:0;display:flex;align-items:center;gap:9px;font:500 11.5px/1 var(--mono);color:var(--mut)}
+.strow b{color:var(--ink);font-weight:600}
+.strow .pill{margin-left:auto;padding:4px 9px;border-radius:999px;font:700 9.5px/1 var(--txt);
+  background:rgba(15,23,42,.07);color:var(--mut)}
+.strow .pill.paid{background:rgba(220,38,38,.13);color:var(--ok)}
+
+/* ---------- CTA (dark) ---------- */
+.scene.cta{background:linear-gradient(160deg,#0B1220,#0F172A 55%,#111E2E);
+  grid-template-columns:1fr;justify-items:center;text-align:center;gap:16px;padding-bottom:118px}
+.cta h1,.cta .si{color:#F8FAFC}
+.cta .lede{color:#94A3B8}
+.cta .glow{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:60%;height:60%;
+  border-radius:50%;background:radial-gradient(circle,rgba(220,38,38,.34),transparent 66%);filter:blur(50px)}
+.lock{position:relative;opacity:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.lock img{width:min(360px,52%);height:auto;display:block;filter:brightness(0) invert(1)}
+.tagline{opacity:0;font-family:var(--disp);font-weight:700;font-size:clamp(18px,2.3vw,30px);
+  letter-spacing:-.02em;color:#E2E8F0}
+.tagline em{font-style:normal;color:#F87171}
+.waBtn{opacity:0;display:inline-flex;align-items:center;gap:11px;padding:13px 22px;border-radius:999px;
+  background:var(--wa);color:#FFFFFF;font:800 20px/1 var(--mono);letter-spacing:.01em;
+  box-shadow:0 26px 50px -22px rgba(220,38,38,.9)}
+.waBtn svg{width:22px;height:22px;fill:#FFFFFF}
+.web{opacity:0;font:600 14px/1 var(--mono);color:#FCA5A5;letter-spacing:.02em}
+.by{opacity:0;font:500 11px/1 var(--txt);letter-spacing:.14em;text-transform:uppercase;color:#64748B}
+.flare{position:absolute;top:0;bottom:0;width:16%;left:-30%;opacity:0;pointer-events:none;z-index:6;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);transform:skewX(-14deg)}
+
+/* ---------- watermark + captions ---------- */
+.wm{position:absolute;right:22px;top:20px;z-index:8;opacity:.55;display:flex;align-items:center;gap:7px;
+  font:700 11px/1 var(--disp);letter-spacing:.02em;color:var(--mut)}
+.wm.dark{color:#94A3B8}
+.wm b{font-weight:800;color:var(--ink)}
+.wm.dark b{color:#E2E8F0}
+
+.capwrap{position:absolute;left:0;right:0;bottom:0;height:104px;z-index:8;pointer-events:none;
+  display:flex;align-items:flex-end;justify-content:center;padding:0 60px 22px;
+  background:linear-gradient(180deg,transparent,rgba(241,245,249,.86) 62%)}
+.capwrap.dark{background:linear-gradient(180deg,transparent,rgba(11,18,32,.9) 62%)}
+.cap{max-width:88%;text-align:center;font-family:var(--txt);font-weight:600;
+  font-size:clamp(14px,1.55vw,20px);line-height:1.35;color:var(--ink);
+  background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:11px;
+  padding:9px 16px;box-shadow:0 18px 34px -26px rgba(15,23,42,.8);
+  opacity:0;transform:translateY(10px)}
+.cap em{font-style:normal;font-family:var(--disp);font-weight:700;color:var(--ok)}
+.capwrap.dark .cap{background:rgba(15,23,42,.86);border-color:#1E293B;color:#F1F5F9}
+
+/* ---------- transport ---------- */
+.ctrls{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+button{font:600 12.5px/1 var(--txt);padding:9px 15px;border-radius:9px;border:1px solid var(--line);
+  background:var(--surf);color:var(--ink);cursor:pointer}
+button:hover{border-color:#CBD5E1}
+button.on{background:var(--bad);border-color:var(--bad);color:#fff}
+.track{flex:1;min-width:180px;height:6px;border-radius:6px;background:#D8E0E9;cursor:pointer;overflow:hidden}
+.fill{height:100%;width:0;background:var(--ink)}
+.tc{font:500 11.5px/1 var(--mono);color:var(--mut)}
+.marks{display:flex;gap:3px}
+.marks span{flex:1;text-align:center;font:600 9.5px/1.25 var(--txt);color:#94A3B8;
+  padding:6px 3px;border-radius:6px;background:rgba(255,255,255,.55);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.marks span.act{background:var(--ink);color:#fff}
+.note{font:500 11.5px/1.5 var(--txt);color:var(--mut);max-width:900px}
+
+body.cinema{background:#000;padding:0;gap:0}
+body.cinema .ctrls,body.cinema .marks,body.cinema .note{display:none}
+body.cinema .shell{width:100vw;height:100vh}
+body.cinema .stage{width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;box-shadow:none}
+
+/* ================= 9:16 re-lay =================
+   Same timeline, same scenes — the two-column frame folds into a single
+   column: copy on top, the UI art below it, everything scaled up so it
+   still reads at phone size in a feed. */
+.shell{width:min(430px,100%)}
+.stage{aspect-ratio:9/16;border-radius:22px}
+.scene{grid-template-columns:1fr;align-content:center;justify-items:center;
+  text-align:center;gap:26px;padding:78px 34px 150px}
+.copy{align-items:center;gap:11px;max-width:100%}
+.kick,.solo .kick{align-self:center}
+.rule{align-self:center}
+h1{font-size:clamp(26px,7.4vw,38px)}
+.si{font-size:clamp(17px,4.9vw,25px)}
+.lede{font-size:clamp(12px,3.3vw,15px);max-width:30ch}
+.chips{justify-content:center}
+.art{width:100%}
+.docstack,.mist,.build,.pub,.dash{width:100%}
+.conv{width:100%;gap:10px}
+.arrowbox{width:52px;height:52px}
+.dcard .num{font-size:17px}
+.pdfcard{width:52%;right:-3%;bottom:-5%}
+.kpis{gap:7px}
+.kpi b{font-size:14px}
+.chart{height:84px}
+.li{grid-template-columns:1fr 32px 64px;font-size:11px}
+.capwrap{height:150px;padding:0 26px 30px}
+.cap{max-width:96%;font-size:clamp(13px,3.7vw,17px)}
+.wm{right:16px;top:16px;font-size:10px}
+.lock img{width:74%}
+.tagline{font-size:clamp(19px,5.6vw,26px)}
+.waBtn{font-size:19px;padding:13px 20px}
+.marks span{font-size:8px}
+.scene.cta{padding-bottom:150px}
+body.cinema .shell{width:100vw}
+
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="stage" id="stage">
+  <div class="wash"><i class="w1"></i><i class="w2"></i><i class="w3"></i></div>
+  <div class="mesh"></div>
+
+  <!-- 0 · 0–5 · the problem -->
+  <section class="scene s0">
+    <div class="copy">
+      <span class="kick" data-split>Quotations · Invoices</span>
+      <h1 data-split>Still quoting from last year's file?</h1>
+      <div class="rule"></div>
+      <p class="lede" data-split>Duplicate. Rename. Hope nothing from the old one survived.</p>
+    </div>
+    <div class="art">
+      <div class="docstack">
+        <div class="card doc"><div class="bar"><i></i><i></i><i></i><span>Quotation-FINAL-v3(copy).docx</span></div>
+          <div class="pg">
+            <h4>QUOTATION</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="wrong wname">Client: Perera Traders</span>
+              <span class="wrong wnum">QKWN005</span>
+            </div>
+            <div class="rowline" style="width:88%"></div>
+            <div class="rowline" style="width:72%"></div>
+            <div class="rowline" style="width:80%"></div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px">
+              <span style="font:500 11px/1 var(--mono);color:var(--mut)">VAT 18%</span>
+              <span class="wrong wtax">typed by hand</span>
+            </div>
+          </div>
+          <div class="strike"></div>
+        </div>
+        <div class="tag t1" style="left:-6%;top:22%">last client's name</div>
+        <div class="tag t2" style="right:-8%;top:6%">same number again</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1 · 5–9 · three mistakes -->
+  <section class="scene s1">
+    <div class="copy">
+      <span class="kick" data-split>Every single time</span>
+      <p class="si" data-split>Every quote reopens the <em>same three mistakes</em>.</p>
+      <p class="lede" data-split>And no one can say which version the client actually agreed to.</p>
+    </div>
+    <div class="art">
+      <div class="mist">
+        <div class="mrow"><span class="x">✕</span><div><b>Wrong client name</b><small>carried over from the copy</small></div></div>
+        <div class="mrow"><span class="x">✕</span><div><b>Tax edited by hand</b><small>18% typed, not calculated</small></div></div>
+        <div class="mrow"><span class="x">✕</span><div><b>Duplicate number</b><small>QKWN005 issued twice</small></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · 9–14 · the reveal -->
+  <section class="scene s2 solo">
+    <div class="copy" style="align-items:center;max-width:820px">
+      <span class="kick" data-split>The fix</span>
+      <h1 data-split>InvoGen builds the document instead.</h1>
+      <div class="rule" style="align-self:center"></div>
+      <p class="si" data-split>Quotations, proposals, invoices and bills — <em>one tracked workflow</em>.</p>
+      <div class="chips" style="justify-content:center;margin-top:6px">
+        <span class="chip"><i></i>Quotation</span>
+        <span class="chip"><i></i>Proposal</span>
+        <span class="chip"><i></i>Invoice</span>
+        <span class="chip"><i></i>Bill</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · 14–22 · builder + PDF -->
+  <section class="scene s3">
+    <div class="copy">
+      <span class="kick" data-split>Feature 01</span>
+      <p class="si" data-split>Line items, tax, discounts — totals calculated <em>on the server</em>, every time.</p>
+      <p class="lede" data-split>What you see in the preview is exactly what the PDF prints. No drift.</p>
+    </div>
+    <div class="art">
+      <div class="card build">
+        <div class="bar"><i></i><i></i><i></i><span>QKWN005 · Draft</span></div>
+        <div class="srv">calculated on the server</div>
+        <div class="pg">
+          <div class="li"><span>Brand identity &amp; logo suite</span><span class="qty">1</span><span class="amt">45,000</span></div>
+          <div class="li"><span>Website design — 6 pages</span><span class="qty">6</span><span class="amt">120,000</span></div>
+          <div class="li"><span>Content management setup</span><span class="qty">1</span><span class="amt">35,000</span></div>
+          <div class="li"><span>Hosting &amp; support — 12 mo</span><span class="qty">12</span><span class="amt">24,000</span></div>
+          <div class="tot">
+            <div><span>Subtotal</span><b class="cnt" data-to="224000">0</b></div>
+            <div><span>Discount 5%</span><b class="cnt" data-to="11200" data-neg="1">0</b></div>
+            <div class="grand"><span>Total (LKR)</span><b class="cnt" data-to="212800">0</b></div>
+          </div>
+        </div>
+        <div class="card pdfcard">
+          <div class="bar"><span>QKWN005.pdf</span></div>
+          <div class="pg">
+            <div class="rowline" style="width:56%"></div>
+            <div class="rowline" style="width:88%"></div>
+            <div class="rowline" style="width:74%"></div>
+            <div class="rowline" style="width:82%"></div>
+            <div class="rowline" style="width:40%;background:#FEE2E2"></div>
+          </div>
+        </div>
+        <div class="equals">preview = PDF</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · 22–29 · share + sign -->
+  <section class="scene s4">
+    <div class="copy">
+      <span class="kick" data-split>Feature 02</span>
+      <p class="si" data-split>Send a link. The client reads it and <em>signs it</em> — right there.</p>
+      <p class="lede" data-split>No account to create. No printer. No scanner. Just a link.</p>
+      <div class="chips noacct">
+        <span class="chip"><i></i>No login for the client</span>
+        <span class="chip"><i></i>Works on a phone</span>
+      </div>
+    </div>
+    <div class="art">
+      <div class="card pub">
+        <div class="bar"><i></i><i></i><i></i><span>Public link</span></div>
+        <div class="pg">
+          <div class="urlbar"><i></i>invogen.kwingsmedia.com/q/QKWN005</div>
+          <div class="rowline" style="width:70%"></div>
+          <div class="rowline" style="width:92%"></div>
+          <div class="signbox">
+            <svg viewBox="0 0 300 100" preserveAspectRatio="none"><path id="sig"
+              d="M12,74 C40,20 58,86 78,54 C96,26 108,80 128,58 C146,38 154,80 176,50 C196,24 210,74 232,52 C250,34 264,62 288,34"/></svg>
+            <span>Sign here</span>
+          </div>
+        </div>
+        <div class="accepted">✓ Accepted &amp; signed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · 29–35 · convert -->
+  <section class="scene s5 solo">
+    <div class="copy" style="align-items:center;max-width:900px;gap:18px">
+      <span class="kick" data-split>Feature 03</span>
+      <p class="si" data-split>An accepted quotation becomes an invoice in <em>one click</em>.</p>
+      <div class="art" style="width:100%">
+        <div class="conv">
+          <div class="card dcard d1">
+            <div class="num">QKWN005</div><div class="lbl">Quotation</div>
+            <span class="st acc">✓ Accepted</span>
+          </div>
+          <div class="arrowbox"><b>→</b></div>
+          <div class="card dcard d2">
+            <div class="num">IKWN002</div><div class="lbl">Invoice</div>
+            <span class="st pen">Awaiting payment</span>
+          </div>
+          <div class="link"></div><div class="linkw">linked both ways</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · 35–40 · dashboard -->
+  <section class="scene s6">
+    <div class="copy">
+      <span class="kick" data-split>Everything in one place</span>
+      <p class="si" data-split>Payments, balances, every document — on <em>one dashboard</em>.</p>
+      <p class="lede" data-split>Who owes what, and since when. Visible, not remembered.</p>
+    </div>
+    <div class="art">
+      <div class="card dash">
+        <div class="bar"><i></i><i></i><i></i><span>Dashboard</span></div>
+        <div class="pg">
+          <div class="kpis">
+            <div class="kpi"><small>Issued</small><b class="cnt" data-to="18" data-plain="1">0</b></div>
+            <div class="kpi"><small>Outstanding</small><b class="cnt" data-to="86500">0</b></div>
+            <div class="kpi good"><small>Balance</small><b class="bal">Rs. 0.00</b></div>
+          </div>
+          <div class="chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="statrow">
+            <div class="strow"><b>IKWN002</b> Silva &amp; Co.<span class="pill">Sent</span></div>
+            <div class="strow"><b>IKWN001</b> Nimal Enterprises<span class="pill">Sent</span></div>
+            <div class="strow"><b>QKWN005</b> Perera Traders<span class="pill">Sent</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · 40–45 · CTA -->
+  <section class="scene s7 cta">
+    <div class="glow"></div>
+    <div class="lock"><img src="../assets/invogen/logo-full.png" alt="InvoGen"></div>
+    <div class="tagline">Quote. <em>Sign.</em> Get paid.</div>
+    <a class="waBtn" href="https://wa.me/94701503412" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.2-1.7-.9-2-1-.3-.1-.5-.2-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.2-.5-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.6c.1-.2.2-.3.3-.5 0-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.2-.3-.3-.6-.4zM12 2A10 10 0 0 0 3.5 17.2L2 22l4.9-1.5A10 10 0 1 0 12 2z"/></svg>
+      070 150 3412
+    </a>
+    <div class="web">invogen.kwingsmedia.com</div>
+    <div class="by">by Kwings Media (Pvt) Ltd</div>
+    <div class="flare"></div>
+  </section>
+
+  <div class="wm" id="wm"><b>InvoGen</b> · Kwings Media</div>
+  <div class="capwrap" id="capwrap"><div class="cap" id="cap"></div></div>
+  <div class="flash" id="flash"></div>
+  <div class="vig"></div><div class="grain"></div>
+</div>
+
+<div class="ctrls">
+  <button id="play">Pause</button>
+  <button id="restart">Restart</button>
+  <button id="rec" title="Records the film full-frame and saves it as a video file">Export MP4</button>
+  <div class="track" id="track"><div class="fill" id="fill"></div></div>
+  <span class="tc" id="tc">0:00</span><span class="tc">/ 0:47</span>
+</div>
+<div class="marks" id="marks"></div>
+<p class="note">47.8s cut · 9:16 for Reels / TikTok / Stories. Captions are burned in so the film reads with sound off.
+Audio is <code>assets/invogen-mix.mp3</code> — the VO plus an original music bed, sidechain-ducked (47.8s). Scene boundaries in <code>CUTS</code> were
+read off that waveform; <code>T()</code> maps the 45s authoring grid onto them, so every keyframe
+below still reads in its original numbers. Nudge <code>CUTS</code> / <code>CUES</code> to re-sync.</p>
+</div>
+
+<audio id="vo" preload="auto"></audio>
+
+<script>
+(function(){
+  var DUR=47.8;                          /* the VO track's real length */
+  var AUDIO=true;
+  var AUDIO_SRC='../assets/invogen/mix.mp3';   /* VO + music bed, ducked */
+
+  /* OLD is the 45s grid every animation below was authored against.
+     CUTS is where the scenes actually land now — the boundaries were read off
+     the VO waveform (each is ~0.35s before a line's first word), and T() maps
+     one onto the other, so no keyframe below had to be renumbered. */
+  var OLD  = [0,5,9,14,22,29,35,40,45];
+  var CUTS = [0, 5.01, 10.89, 19.87, 24.60, 31.48, 37.52, 42.66, 47.80];
+  function T(x){
+    if(x<=0) return 0;
+    for(var i=0;i<OLD.length-1;i++){
+      if(x<=OLD[i+1])
+        return CUTS[i]+(x-OLD[i])*(CUTS[i+1]-CUTS[i])/(OLD[i+1]-OLD[i]);
+    }
+    return DUR;
+  }
+  var LABELS=['The old file','Three mistakes','The fix','Builder + PDF',
+              'Share &amp; sign','Quote &rarr; Invoice','Dashboard','CTA'];
+
+  /* [in, out, caption] — timed to the narration in assets/invogen.mp3 */
+  var CUES=[
+    [0.30 , 4.75 ,'Still quoting from last year\'s Word file? Duplicate, rename, and hope.'],
+    [5.30 ,10.65 ,'Every quote reopens the same three mistakes.'],
+    [11.15,19.60 ,'<em>InvoGen</em> builds the document instead. Quotations, proposals, invoices, bills.'],
+    [20.15,24.40 ,'Line items, tax, discounts — every total calculated on the server, every time.'],
+    [24.90,31.20 ,'Send a link. Your client opens it, reads it, and signs it right there — no account, no printer.'],
+    [31.75,37.25 ,'The moment a quotation is accepted, it becomes an invoice in one click.'],
+    [37.80,42.40 ,'Payments, balances, and every document you\'ve issued — on one dashboard.'],
+    [42.95,47.60 ,'<em>InvoGen</em>, by Kwings Media. WhatsApp us to get your own instance set up.']
+  ];
+
+  var $=function(s,r){return (r||document).querySelector(s)},
+      $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
+  var scenes=$$('.scene'), stage=$('#stage'), fill=$('#fill'), tc=$('#tc'),
+      playBtn=$('#play'), track=$('#track'), audio=$('#vo'),
+      capEl=$('#cap'), capWrap=$('#capwrap'), wm=$('#wm');
+  var ms=function(s){return Math.round(s*1000)};
+  if(AUDIO) audio.src=AUDIO_SRC;
+
+  /* ---------- word splitting ---------- */
+  function split(el){
+    if(el.dataset.done) return;
+    var out=[];
+    [].slice.call(el.childNodes).forEach(function(n){
+      if(n.nodeType===3){
+        n.textContent.split(/(\s+)/).forEach(function(p){
+          if(!p) return;
+          var s=document.createElement('span'); s.className='w'; s.textContent=p; out.push(s);
+        });
+      } else { n.classList&&n.classList.add('w'); out.push(n); }
+    });
+    el.textContent=''; out.forEach(function(s){el.appendChild(s)});
+    el.dataset.done='1';
+  }
+  $$('[data-split]').forEach(split);
+
+  var tl=anime.timeline({autoplay:false,duration:ms(DUR),easing:'linear'});
+  function add(p,at){ tl.add(p,ms(T(at))); return tl; }
+  function words(sel,at,o){
+    o=o||{};
+    add({targets:sel,opacity:[0,1],translateY:[o.y===undefined?24:o.y,0],
+      rotateX:[o.rx===undefined?-62:o.rx,0],filter:['blur(6px)','blur(0px)'],
+      duration:o.d||720,delay:anime.stagger(o.st||46),
+      easing:'cubicBezier(.16,1,.3,1)'},at);
+  }
+  function counter(el,at,dur){
+    var to=parseFloat(el.dataset.to), neg=el.dataset.neg, plain=el.dataset.plain, o={v:0};
+    add({targets:o,v:to,duration:ms(dur),easing:'cubicBezier(.2,.9,.3,1)',
+      update:function(){
+        var n=Math.round(o.v);
+        el.textContent=(neg?'− ':'')+(plain?n:n.toLocaleString('en-US',{minimumFractionDigits:0}));
+      }},at);
+  }
+
+  /* ---------- scene cuts: a soft push, not a whip — this is a business tool ---------- */
+  scenes.forEach(function(sc,i){
+    var tin=OLD[i], tout=OLD[i+1], dir=(i%2)?-1:1;
+    if(i===0) sc.style.opacity=1;
+    else add({targets:sc,opacity:[0,1],translateX:[dir*90,0],scale:[1.035,1],
+      filter:['blur(10px)','blur(0px)'],duration:620,
+      easing:'cubicBezier(.16,1,.3,1)'},tin-0.30);
+    if(i<scenes.length-1)
+      add({targets:sc,opacity:[1,0],translateX:[0,-dir*70],scale:[1,.975],
+        filter:['blur(0px)','blur(10px)'],duration:400,
+        easing:'cubicBezier(.6,0,.9,.2)'},tout-0.34);
+  });
+  /* a light wash on each cut keeps the joins from reading as hard jumps */
+  var flash=$('#flash');
+  for(var c=1;c<OLD.length-1;c++)
+    add({targets:flash,opacity:[0,.30,0],duration:420,easing:'easeOutQuad'},OLD[c]-0.24);
+
+  /* ---------- ambient drift, whole film ---------- */
+  add({targets:'.w1',translateX:[-40,90],translateY:[-20,60],scale:[1,1.3],duration:ms(DUR),easing:'easeInOutSine'},0);
+  add({targets:'.w2',translateX:[70,-110],translateY:[30,-50],scale:[1.2,.95],duration:ms(DUR),easing:'easeInOutSine'},0);
+  add({targets:'.w3',translateX:[-30,120],translateY:[40,-60],scale:[.9,1.35],duration:ms(DUR),easing:'easeInOutSine'},0);
+  add({targets:'.mesh',backgroundPosition:['0 0','-92px 92px'],duration:ms(DUR),easing:'linear'},0);
+
+  /* ================= 0 · 0–5 · the old file ================= */
+  words('.s0 .kick .w',0.15,{y:12,rx:0,st:22});
+  words('.s0 h1 .w',0.40,{y:52,st:70,d:940});
+  add({targets:'.s0 .rule',width:['0%','48%'],duration:760,easing:'cubicBezier(.16,1,.3,1)'},1.25);
+  words('.s0 .lede .w',1.45,{y:14,rx:0,st:22});
+  add({targets:'.s0 .doc',opacity:[0,1],scale:[.9,1],translateY:[26,0],rotate:[-2.5,-1],
+    duration:860,easing:'cubicBezier(.16,1,.3,1)'},0.35);
+  add({targets:'.s0 .doc',scale:[1,1.045],duration:ms(4.4),easing:'easeInOutSine'},0.6);
+  add({targets:'.s0 .wname',backgroundColor:['rgba(180,83,9,.08)','rgba(180,83,9,.22)'],
+    duration:420,direction:'alternate',loop:4,easing:'easeInOutSine'},1.9);
+  add({targets:'.s0 .t1',opacity:[0,1],translateY:[10,0],scale:[.8,1],
+    duration:520,easing:'cubicBezier(.2,1.5,.4,1)'},2.15);
+  add({targets:'.s0 .t2',opacity:[0,1],translateY:[10,0],scale:[.8,1],
+    duration:520,easing:'cubicBezier(.2,1.5,.4,1)'},3.05);
+  add({targets:'.s0 .wnum',color:['#B45309','#B45309'],scale:[1,1.16],
+    duration:420,direction:'alternate',loop:4,easing:'easeInOutSine'},3.1);
+  add({targets:'.s0 .strike',scaleX:[0,1],duration:620,easing:'cubicBezier(.4,0,.2,1)'},3.9);
+
+  /* ================= 1 · 5–9 · three mistakes ================= */
+  words('.s1 .kick .w',5.10,{y:12,rx:0,st:22});
+  words('.s1 .si .w',5.30,{y:26,st:38,d:780});
+  words('.s1 .lede .w',7.30,{y:12,rx:0,st:20});
+  add({targets:'.s1 .mrow',opacity:[0,1],translateX:[54,0],scale:[.94,1],
+    duration:640,delay:anime.stagger(560),easing:'cubicBezier(.2,1.35,.4,1)'},5.35);
+  add({targets:'.s1 .x',scale:[1,1.28],duration:340,direction:'alternate',
+    delay:anime.stagger(560),loop:2,easing:'easeInOutSine'},5.75);
+
+  /* ================= 2 · 9–14 · the reveal ================= */
+  words('.s2 .kick .w',9.10,{y:12,rx:0,st:22});
+  words('.s2 h1 .w',9.35,{y:60,st:82,d:1020});
+  add({targets:'.s2 .rule',width:['0%','30%'],duration:760,easing:'cubicBezier(.16,1,.3,1)'},10.6);
+  words('.s2 .si .w',10.85,{y:22,rx:0,st:34});
+  add({targets:'.s2 .chip',opacity:[0,1],translateY:[18,0],scale:[.84,1],
+    duration:600,delay:anime.stagger(150),easing:'cubicBezier(.2,1.45,.4,1)'},11.7);
+
+  /* ================= 3 · 14–22 · builder + PDF ================= */
+  words('.s3 .kick .w',14.10,{y:12,rx:0,st:22});
+  words('.s3 .si .w',14.35,{y:26,st:36,d:820});
+  words('.s3 .lede .w',18.60,{y:12,rx:0,st:20});
+  add({targets:'.s3 .build',opacity:[0,1],translateY:[30,0],scale:[.95,1],
+    duration:820,easing:'cubicBezier(.16,1,.3,1)'},13.85);
+  add({targets:'.s3 .build',scale:[1,1.035],duration:ms(7),easing:'easeInOutSine'},14.6);
+  add({targets:'.s3 .li',opacity:[0,1],translateX:[-26,0],
+    duration:480,delay:anime.stagger(300),easing:'cubicBezier(.16,1,.3,1)'},14.9);
+  add({targets:'.s3 .srv',opacity:[0,1],translateY:[8,0],duration:460,easing:'easeOutQuad'},16.4);
+  $$('.s3 .cnt').forEach(function(el,i){ counter(el,16.6+i*0.5,1.5); });
+  add({targets:'.s3 .tot .grand b',scale:[1,1.1],duration:420,direction:'alternate',
+    loop:2,easing:'easeInOutSine'},18.5);
+  add({targets:'.s3 .pdfcard',opacity:[0,1],translateX:[60,0],translateY:[40,0],rotate:[6,2],
+    duration:820,easing:'cubicBezier(.2,1.3,.4,1)'},19.2);
+  add({targets:'.s3 .equals',opacity:[0,1],scale:[.6,1],
+    duration:600,easing:'cubicBezier(.2,1.6,.4,1)'},20.3);
+
+  /* ================= 4 · 22–29 · share + sign ================= */
+  words('.s4 .kick .w',22.10,{y:12,rx:0,st:22});
+  words('.s4 .si .w',22.35,{y:26,st:36,d:820});
+  words('.s4 .lede .w',24.60,{y:12,rx:0,st:20});
+  add({targets:'.s4 .chip',opacity:[0,1],translateY:[16,0],scale:[.86,1],
+    duration:560,delay:anime.stagger(160),easing:'cubicBezier(.2,1.45,.4,1)'},25.6);
+  add({targets:'.s4 .pub',opacity:[0,1],translateY:[30,0],scale:[.95,1],
+    duration:820,easing:'cubicBezier(.16,1,.3,1)'},21.85);
+  add({targets:'.s4 .urlbar',opacity:[0,1],translateY:[-10,0],duration:520,easing:'easeOutQuad'},22.6);
+  add({targets:'.s4 .urlbar',boxShadow:['0 0 0 0 rgba(220,38,38,.35)','0 0 0 12px rgba(220,38,38,0)'],
+    duration:1300,loop:2,easing:'easeOutQuad'},23.0);
+  /* the signature draws itself, then the accepted badge lands */
+  var sig=$('#sig'), SL=sig.getTotalLength?sig.getTotalLength():600;
+  sig.style.strokeDasharray=SL; sig.style.strokeDashoffset=SL;
+  add({targets:sig,strokeDashoffset:[SL,0],duration:ms(2.0),easing:'cubicBezier(.45,.05,.35,1)'},24.9);
+  add({targets:'.s4 .signbox',borderColor:['#CBD5E1','#DC2626'],
+    backgroundColor:['#FBFDFF','#FEF6F6'],duration:600,easing:'easeOutQuad'},26.9);
+  add({targets:'.s4 .accepted',opacity:[0,1],translateY:[14,0],scale:[.7,1],
+    duration:640,easing:'cubicBezier(.2,1.6,.4,1)'},27.2);
+  add({targets:'.s4 .pub',scale:[1,1.03],duration:ms(5.5),easing:'easeInOutSine'},22.6);
+
+  /* ================= 5 · 29–35 · convert ================= */
+  words('.s5 .kick .w',29.10,{y:12,rx:0,st:22});
+  words('.s5 .si .w',29.35,{y:28,st:40,d:840});
+  add({targets:'.s5 .d1',opacity:[0,1],translateX:[-46,0],
+    duration:700,easing:'cubicBezier(.16,1,.3,1)'},30.2);
+  add({targets:'.s5 .arrowbox',opacity:[0,1],scale:[0,1],rotate:[-140,0],
+    duration:680,easing:'cubicBezier(.2,1.6,.4,1)'},31.3);
+  add({targets:'.s5 .arrowbox',boxShadow:['0 0 0 0 rgba(15,23,42,.35)','0 0 0 22px rgba(15,23,42,0)'],
+    duration:1400,loop:2,easing:'easeOutQuad'},31.7);
+  add({targets:'.s5 .d2',opacity:[0,1],translateX:[46,0],scale:[.9,1],
+    duration:760,easing:'cubicBezier(.2,1.35,.4,1)'},31.9);
+  add({targets:'.s5 .linkw',opacity:[0,1],duration:500,easing:'easeOutQuad'},33.0);
+  add({targets:'.s5 .conv',scale:[1,1.035],duration:ms(4.6),easing:'easeInOutSine'},30.3);
+
+  /* ================= 6 · 35–40 · dashboard ================= */
+  words('.s6 .kick .w',35.10,{y:12,rx:0,st:22});
+  words('.s6 .si .w',35.30,{y:26,st:36,d:800});
+  words('.s6 .lede .w',37.60,{y:12,rx:0,st:20});
+  add({targets:'.s6 .dash',opacity:[0,1],translateY:[28,0],scale:[.95,1],
+    duration:800,easing:'cubicBezier(.16,1,.3,1)'},34.85);
+  add({targets:'.s6 .kpi',opacity:[0,1],translateY:[14,0],
+    duration:520,delay:anime.stagger(150),easing:'cubicBezier(.2,1.4,.4,1)'},35.3);
+  $$('.s6 .cnt').forEach(function(el,i){ counter(el,35.6+i*0.3,1.4); });
+  add({targets:'.s6 .chart i',height:function(el,i){return [0,(26+((i*37)%62))+'%']},
+    duration:700,delay:anime.stagger(80),easing:'cubicBezier(.2,1.3,.4,1)'},35.9);
+  add({targets:'.s6 .strow',opacity:[0,1],translateX:[26,0],
+    duration:480,delay:anime.stagger(200),easing:'cubicBezier(.16,1,.3,1)'},36.9);
+  /* the status chips flip to Paid one by one — the point of the whole scene */
+  $$('.s6 .strow .pill').forEach(function(p,i){
+    add({targets:p,scale:[1,1.16,1],duration:420,easing:'easeInOutSine',
+      begin:function(){ p.classList.add('paid'); p.textContent='Paid'; },
+      complete:function(){}},38.0+i*0.45);
+  });
+  add({targets:'.s6 .kpi.good b',scale:[1,1.14],duration:420,direction:'alternate',
+    loop:2,easing:'easeInOutSine'},39.2);
+
+  /* ================= 7 · 40–45 · CTA ================= */
+  add({targets:'.s7 .glow',opacity:[0,1],scale:[.5,1.1],duration:ms(2.2),easing:'easeOutQuad'},39.9);
+  add({targets:'.s7 .lock',opacity:[0,1],scale:[.82,1],translateY:[22,0],
+    filter:['blur(12px)','blur(0px)'],duration:1000,easing:'cubicBezier(.2,1.3,.35,1)'},40.0);
+  add({targets:'.s7 .lock',translateY:[0,-7],direction:'alternate',loop:3,
+    duration:1100,easing:'easeInOutSine'},41.2);
+  add({targets:'.s7 .flare',opacity:[0,1],left:['-30%','112%'],
+    duration:ms(1.5),easing:'cubicBezier(.4,0,.2,1)'},40.5);
+  add({targets:'.s7 .flare',opacity:[1,0],duration:400,easing:'linear'},41.9);
+  add({targets:'.s7 .tagline',opacity:[0,1],translateY:[16,0],duration:760,
+    easing:'cubicBezier(.16,1,.3,1)'},41.0);
+  add({targets:'.s7 .waBtn',opacity:[0,1],translateY:[20,0],scale:[.86,1],
+    duration:700,easing:'cubicBezier(.2,1.5,.4,1)'},41.8);
+  add({targets:'.s7 .waBtn',boxShadow:['0 0 0 0 rgba(220,38,38,.45)','0 0 0 28px rgba(220,38,38,0)'],
+    duration:1500,loop:2,easing:'easeOutQuad'},42.4);
+  add({targets:'.s7 .web',opacity:[0,1],translateY:[12,0],duration:600,easing:'easeOutQuad'},42.6);
+  add({targets:'.s7 .by',opacity:[0,1],duration:600,easing:'easeOutQuad'},43.2);
+
+  /* ---------- captions ---------- */
+  var curCue=-2;
+  function caption(t){
+    var idx=-1;
+    for(var i=0;i<CUES.length;i++) if(t>=CUES[i][0]&&t<CUES[i][1]){ idx=i; break; }
+    if(idx===curCue) return;
+    curCue=idx;
+    if(idx<0){ capEl.style.opacity=0; capEl.style.transform='translateY(10px)'; return; }
+    capEl.innerHTML=CUES[idx][2];
+    capEl.style.opacity=1; capEl.style.transform='translateY(0)';
+  }
+  capEl.style.transition='opacity .22s ease, transform .22s ease';
+
+  /* ---------- markers ---------- */
+  var marks=$('#marks'), markEls=[];
+  for(var m=0;m<CUTS.length-1;m++){
+    var sp=document.createElement('span');
+    sp.style.flex=(CUTS[m+1]-CUTS[m])+' 0 0';
+    sp.innerHTML=(m+1)+' · '+LABELS[m];
+    marks.appendChild(sp); markEls.push(sp);
+  }
+
+  /* ---------- transport ---------- */
+  var qs=/[?&]t=([\d.]+)/.exec(location.search);
+  var t=qs?Math.min(DUR-0.05,parseFloat(qs[1])):0;
+  var playing=!/[?&]paused/.test(location.search), last=performance.now(), curMark=-1;
+  function fmt(x){var s=Math.floor(x);return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2)}
+  function syncAudio(){
+    if(!AUDIO) return;
+    try{ audio.currentTime=t; }catch(e){}
+    if(playing){ var p=audio.play(); if(p&&p.catch) p.catch(function(){ audio.muted=true; audio.play().catch(function(){}); }); }
+    else audio.pause();
+  }
+  function render(){
+    tl.seek(Math.min(ms(t),ms(DUR)-1));
+    fill.style.width=(t/DUR*100)+'%';
+    tc.textContent=fmt(t);
+    caption(t);
+    /* the CTA frame is dark — captions and watermark invert with it */
+    var dark=t>=CUTS[7]-0.2;
+    capWrap.classList.toggle('dark',dark);
+    wm.classList.toggle('dark',dark);
+    var mi=0; for(var i=CUTS.length-2;i>=0;i--){ if(t>=CUTS[i]){ mi=i; break; } }
+    if(mi!==curMark){ markEls.forEach(function(e,j){ e.classList.toggle('act',j===mi); }); curMark=mi; }
+  }
+  function frame(now){
+    var dt=(now-last)/1000; last=now;
+    if(playing){
+      if(AUDIO && !audio.paused && !audio.ended && audio.currentTime>0 && Math.abs(audio.currentTime-t)<1.5) t=audio.currentTime;
+      else t+=dt;
+      if(t>=DUR){
+        if(recording){ t=DUR-0.001; playing=false; render(); stopExport(); return requestAnimationFrame(frame); }
+        /* a loop restart has to reset the chips the timeline mutates by hand */
+        resetMutations(); t=0; syncAudio();
+      }
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+  function resetMutations(){
+    $$('.s6 .strow .pill').forEach(function(p){ p.classList.remove('paid'); p.textContent='Sent'; });
+    curCue=-2;
+  }
+  render(); syncAudio();
+  requestAnimationFrame(function(n){ last=n; frame(n); });
+
+  playBtn.addEventListener('click',function(){
+    playing=!playing; playBtn.textContent=playing?'Pause':'Play'; syncAudio();
+  });
+  $('#restart').addEventListener('click',function(){
+    resetMutations(); t=0; playing=true; playBtn.textContent='Pause'; syncAudio(); render();
+  });
+  track.addEventListener('click',function(e){
+    var r=track.getBoundingClientRect();
+    var nt=Math.max(0,Math.min(DUR-0.05,(e.clientX-r.left)/r.width*DUR));
+    if(nt<t) resetMutations();
+    t=nt; syncAudio(); render();
+  });
+
+  /* ================================================================
+     export — records the film full-frame straight out of the tab and
+     crops the stage into a clean 1920x1080 canvas.
+     ================================================================ */
+  var recBtn=$('#rec'), recorder=null, recChunks=[], recStream=null, recording=false,
+      cropStop=null, beginRoll=function(){};
+  function pickMime(){
+    var want=['video/mp4;codecs="avc1.640028,mp4a.40.2"','video/mp4;codecs=avc1','video/mp4',
+              'video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+    if(!window.MediaRecorder) return '';
+    for(var i=0;i<want.length;i++) if(MediaRecorder.isTypeSupported(want[i])) return want[i];
+    return '';
+  }
+  function exitCinema(){
+    document.body.classList.remove('cinema');
+    recBtn.classList.remove('on'); recBtn.textContent='Export MP4';
+  }
+  function stopExport(){ if(!recording) return; recording=false; try{ recorder.stop(); }catch(e){} }
+  function startExport(){
+    var mime=pickMime();
+    if(!mime||!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){
+      alert('This browser cannot record the film. Use Chrome or Edge.'); return;
+    }
+    navigator.mediaDevices.getDisplayMedia({
+      video:{frameRate:{ideal:60,max:60}},audio:true,
+      preferCurrentTab:true,selfBrowserSurface:'include',surfaceSwitching:'exclude'
+    }).then(function(display){
+      var atrack=null;
+      if(AUDIO){
+        try{
+          var cap=audio.captureStream?audio.captureStream():(audio.mozCaptureStream?audio.mozCaptureStream():null);
+          if(cap) atrack=cap.getAudioTracks()[0]||null;
+        }catch(e){}
+      }
+      if(!atrack) atrack=display.getAudioTracks()[0]||null;
+
+      var vtrack=display.getVideoTracks()[0];
+      var surf=(vtrack.getSettings&&vtrack.getSettings().displaySurface)||'';
+      if(surf&&surf!=='browser'){
+        display.getTracks().forEach(function(tr){ tr.stop(); });
+        alert('Pick the "Chrome Tab" option (this tab) so the export can crop to the film frame.');
+        return;
+      }
+      var srcVid=document.createElement('video');
+      srcVid.muted=true; srcVid.playsInline=true; srcVid.srcObject=new MediaStream([vtrack]);
+      var out=document.createElement('canvas'); out.width=1080; out.height=1920;
+      var octx=out.getContext('2d',{alpha:false});
+      octx.fillStyle='#F1F5F9'; octx.fillRect(0,0,1080,1920);
+      var painting=true, firstFrame=false;
+      cropStop=function(){ painting=false; srcVid.srcObject=null; };
+      function paint(){
+        if(!painting) return;
+        if(srcVid.videoWidth){
+          var r=stage.getBoundingClientRect(),
+              kx=srcVid.videoWidth/window.innerWidth,
+              ky=srcVid.videoHeight/window.innerHeight;
+          octx.drawImage(srcVid, r.left*kx, r.top*ky, r.width*kx, r.height*ky, 0,0,1080,1920);
+          if(!firstFrame){ firstFrame=true; beginRoll(); }
+        }
+        if(srcVid.requestVideoFrameCallback) srcVid.requestVideoFrameCallback(paint);
+        else requestAnimationFrame(paint);
+      }
+      srcVid.play().then(function(){
+        if(srcVid.requestVideoFrameCallback) srcVid.requestVideoFrameCallback(paint);
+        else requestAnimationFrame(paint);
+      }).catch(function(){});
+
+      recStream=new MediaStream();
+      recStream.addTrack(out.captureStream(60).getVideoTracks()[0]);
+      if(atrack) recStream.addTrack(atrack);
+
+      recChunks=[];
+      recorder=new MediaRecorder(recStream,{mimeType:mime,videoBitsPerSecond:12000000});
+      recorder.ondataavailable=function(e){ if(e.data&&e.data.size) recChunks.push(e.data); };
+      recorder.onstop=function(){
+        if(cropStop){ cropStop(); cropStop=null; }
+        display.getTracks().forEach(function(tr){ tr.stop(); });
+        exitCinema();
+        var ext=mime.indexOf('mp4')>-1?'mp4':'webm';
+        var blob=new Blob(recChunks,{type:mime.split(';')[0]});
+        var url=URL.createObjectURL(blob), a=document.createElement('a');
+        a.href=url; a.download='invogen-promo-9x16.'+ext;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); },30000);
+        playing=false; playBtn.textContent='Play'; syncAudio();
+      };
+      vtrack.addEventListener('ended',stopExport);
+
+      document.body.classList.add('cinema');
+      recBtn.classList.add('on'); recBtn.textContent='Recording…';
+      if(AUDIO){ audio.muted=false; }
+      recording=true;
+      beginRoll=function(){
+        if(!recording||recorder.state!=='inactive') return;
+        resetMutations(); t=0; playing=true; playBtn.textContent='Pause'; syncAudio(); render();
+        recorder.start(250);
+      };
+      setTimeout(function(){ beginRoll(); },1500);
+    }).catch(function(err){
+      if(err&&err.name!=='NotAllowedError') alert('Could not start the recording: '+err);
+    });
+  }
+  recBtn.addEventListener('click',function(){ recording?stopExport():startExport(); });
+  if(/[?&]cinema/.test(location.search)) document.body.classList.add('cinema');
+  document.addEventListener('keydown',function(e){
+    if(e.code==='Escape'&&document.body.classList.contains('cinema')) stopExport();
+    if(e.code==='Space'){ e.preventDefault(); playBtn.click(); }
+    if(e.code==='ArrowRight'){ t=Math.min(DUR-.05,t+2); syncAudio(); render(); }
+    if(e.code==='ArrowLeft'){ var n=Math.max(0,t-2); resetMutations(); t=n; syncAudio(); render(); }
+  });
+})();
+</script>
+</body>
+</html>
