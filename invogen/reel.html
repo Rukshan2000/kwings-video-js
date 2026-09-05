@@ -790,6 +790,18 @@ below still reads in its original numbers. Nudge <code>CUTS</code> / <code>CUES<
     $$('.s6 .strow .pill').forEach(function(p){ p.classList.remove('paid'); p.textContent='Sent'; });
     curCue=-2;
   }
+
+  /* ---------- offline export hook (tools/export.mjs) ---------- */
+  window.__film={
+    DUR:DUR, W:1080, H:1920, name:'invogen-promo',
+    audio:AUDIO_SRC,
+    ready:function(){ return true; },
+    prepare:function(){
+      playing=false; try{ audio.pause(); }catch(e){}
+      document.body.classList.add('cinema');
+    },
+    seek:function(x){ t=Math.max(0,Math.min(DUR-0.001,x)); render(); }
+  };
   render(); syncAudio();
   requestAnimationFrame(function(n){ last=n; frame(n); });
 
@@ -918,5 +930,6 @@ below still reads in its original numbers. Nudge <code>CUTS</code> / <code>CUES<
   });
 })();
 </script>
+<script src="../tools/export-ui.js"></script>
 </body>
 </html>

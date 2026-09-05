@@ -1,0 +1,14 @@
+{
+  "name": "kwings-video-js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "node tools/studio.mjs",
+    "export": "node tools/export.mjs",
+    "export:kwings": "node tools/export.mjs kwings/reel.html",
+    "export:invogen": "node tools/export.mjs invogen/reel.html"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.10.0"
+  }
+}

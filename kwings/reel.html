@@ -1321,6 +1321,20 @@
     render();
     requestAnimationFrame(frame);
   }
+
+  /* ---------- offline export hook (tools/export.mjs) ----------
+     Deterministic seek: no rAF clock, no audio, one exact frame per call. */
+  window.__film={
+    DUR:DUR, W:1080, H:1920, name:'kwings-media-promo',
+    audio:'../assets/kwings/Ai chatbot web site dev advertisement audio.mp3',
+    ready:function(){ return !!(three && three.pivot && three.pivot.children.length); },
+    prepare:function(){
+      playing=false; try{ audio.pause(); }catch(e){}
+      document.body.classList.add('cinema');
+      if(three) three.fit();
+    },
+    seek:function(x){ t=Math.max(0,Math.min(DUR-0.001,x)); render(); }
+  };
   render(); syncAudio();
   requestAnimationFrame(function(n){ last=n; frame(n); });
 
@@ -1469,5 +1483,6 @@
   });
 })();
 </script>
+<script src="../tools/export-ui.js"></script>
 </body>
 </html>
