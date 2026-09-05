@@ -1,21 +1,52 @@
 /**
  * Studio export UI.
  *
- * When the page is served by `npm run studio`, this takes over the "Export MP4"
- * button and hands the render to the offline exporter running on the server —
- * exact frames, constant frame rate, real x264, original audio. Served any other
- * way (file://, a plain static host) it stays out of the way and the page keeps
- * its built-in tab-recording fallback.
+ * Adds an "Export video" button to the transport bar. It hands the render to the
+ * offline exporter (`npm run studio`) — exact frames, constant frame rate, real
+ * x264, original audio — instead of recording the tab.
+ *
+ * The reel is often opened from a different dev server (VS Code Live Server) or
+ * straight off disk, so the server is looked for on this origin first and then
+ * on its own port. If it isn't running, the panel says so and offers the page's
+ * built-in tab recording instead — the button is always there either way.
  */
 (function () {
   'use strict';
-  var btn = document.getElementById('rec');
-  if (!btn || !window.__film) return;
+  var recBtn = document.getElementById('rec');
+  if (!window.__film || !recBtn) return;
 
-  fetch('/api/health').then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (h) { if (h && h.studio) install(); })
-    .catch(function () { /* not the studio server — leave the page alone */ });
+  /* where the render server might be: this origin (npm run studio serves the
+     page itself), then its default port for Live Server / file:// */
+  var ORIGINS = [];
+  if (location.protocol.indexOf('http') === 0) ORIGINS.push('');
+  ['5173', '5174'].forEach(function (p) {
+    var o = 'http://127.0.0.1:' + p;
+    if (o !== location.origin) ORIGINS.push(o);
+  });
+  var API = null;
 
+  function probe() {
+    var tries = ORIGINS.map(function (o) {
+      return fetch(o + '/api/health', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function (h) { if (!h.studio) return Promise.reject(); return o; });
+    });
+    /* first one that answers wins */
+    return new Promise(function (ok, no) {
+      var left = tries.length;
+      if (!left) return no();
+      tries.forEach(function (t) {
+        t.then(function (o) { API = o; ok(o); },
+               function () { if (--left === 0) no(); });
+      });
+    });
+  }
+
+  install();
+  probe().then(status, status);
+
+  var btn;
+  function status() { if (window.__xpStatus) window.__xpStatus(!!API); }
   function install() {
     var css = document.createElement('style');
     css.textContent = [
@@ -53,6 +84,14 @@
       'font:inherit;cursor:pointer}',
       '.xp .err{color:#c0392b;font-size:12.5px;margin-bottom:12px;display:none}',
       '.xp .hide{display:none}',
+      '.xp .note{background:#fbf6e9;border:1px solid #eadfbf;color:#6b5a2a;border-radius:10px;',
+      'padding:11px 12px;font-size:12.5px;line-height:1.5;margin-bottom:14px}',
+      '.xp .note code{background:#fff;border:1px solid #e6dcc2;border-radius:5px;padding:1px 6px;',
+      'font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#14161a}',
+      /* the button we add to the transport bar */
+      'button.xp-btn{display:inline-flex;align-items:center;gap:7px}',
+      'button.xp-btn svg{width:13px;height:13px;flex:none}',
+      'button.xp-btn[data-studio="off"]{opacity:.85}',
     ].join('');
     document.head.appendChild(css);
 
@@ -69,6 +108,10 @@
       '<div class="xp" role="dialog" aria-label="Export video">' +
         '<h3>Export video</h3>' +
         '<p class="sub">Rendered offline, frame by frame — every frame exact, no dropped frames.</p>' +
+        '<div class="note hide" id="xpn">' +
+          'The render server isn\'t running. Start it with <code>npm run studio</code> ' +
+          'in the project folder, then hit Retry — or record the tab instead (lower quality).' +
+        '</div>' +
         '<div class="setup">' +
           '<label>Quality</label><div class="opts" id="xpq"></div>' +
           '<div class="row"><label style="margin:0"><input type="checkbox" id="xpr" style="width:auto"> Range</label>' +
@@ -82,6 +125,8 @@
         '<p class="err" id="xperr"></p>' +
         '<div class="acts">' +
           '<button class="gh" id="xpc">Cancel</button>' +
+          '<button class="gh hide" id="xptab">Record tab</button>' +
+          '<button class="gh hide" id="xpretry">Retry</button>' +
           '<button class="go" id="xpgo">Render</button>' +
         '</div>' +
       '</div>';
@@ -92,6 +137,8 @@
         stat = back.querySelector('#xps'), eta = back.querySelector('#xpe'),
         err = back.querySelector('#xperr'), go = back.querySelector('#xpgo'),
         cancel = back.querySelector('#xpc'), rng = back.querySelector('#xpr'),
+        note = back.querySelector('#xpn'), tabBtn = back.querySelector('#xptab'),
+        retry = back.querySelector('#xpretry'),
         a = back.querySelector('#xpa'), b = back.querySelector('#xpb');
 
     b.value = window.__film.DUR.toFixed(1);
@@ -110,6 +157,15 @@
     rng.onchange = function () { ranged = rng.checked; a.disabled = b.disabled = !ranged; };
 
     function open() { back.classList.add('on'); }
+    window.__xpStatus = function (up) {
+      note.classList.toggle('hide', up);
+      retry.classList.toggle('hide', up);
+      tabBtn.classList.toggle('hide', up);
+      setup.classList.toggle('hide', !up);
+      go.disabled = !up;
+      go.title = up ? '' : 'Start the render server first';
+      btn.dataset.studio = up ? 'on' : 'off';
+    };
     function close() {
       back.classList.remove('on');
       setTimeout(function () { if (!running) reset(); }, 200);
@@ -124,11 +180,18 @@
       go.disabled = false; go.textContent = 'Retry'; btn.textContent = 'Export MP4'; btn.classList.remove('on');
     }
 
+    /* the exporter takes a project-relative path; work it out from the URL,
+       whichever server (or file://) the reel happens to be open from */
+    function filmTarget() {
+      var m = /([\w-]+\/[\w-]+\.html)$/.exec(location.pathname);
+      return m ? m[1] : location.pathname.replace(/^\/+/, '');
+    }
+
     go.onclick = function () {
       if (running) return;
       var Q = QUALITY[quality];
       var body = {
-        target: location.pathname.replace(/^\//, ''),
+        target: filmTarget(),
         fps: Q.fps, crf: Q.crf, preset: Q.preset, scale: Q.scale,
       };
       if (ranged) { body.from = Number(a.value) || 0; body.to = Number(b.value) || window.__film.DUR; }
@@ -138,7 +201,7 @@
       err.style.display = 'none'; stat.textContent = 'Starting Chrome…'; cancel.textContent = 'Stop';
       btn.classList.add('on'); btn.textContent = 'Rendering…';
 
-      fetch('/api/export', {
+      fetch(API + '/api/export', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
       }).then(function (r) {
         if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'server refused'); });
@@ -148,7 +211,7 @@
 
     function listen() {
       if (es) es.close();
-      es = new EventSource('/api/progress');
+      es = new EventSource(API + '/api/progress');
       es.onmessage = function (m) {
         var e = JSON.parse(m.data);
         if (e.type === 'start') {
@@ -170,7 +233,7 @@
           cancel.textContent = 'Close';
           btn.textContent = 'Export MP4'; btn.classList.remove('on');
           var link = document.createElement('a');
-          link.href = e.url; link.download = e.name;
+          link.href = API + e.url; link.download = e.name;
           document.body.appendChild(link); link.click(); link.remove();
         } else if (e.type === 'error') {
           es.close(); fail(e.message || 'the render failed');
@@ -181,7 +244,7 @@
 
     cancel.onclick = function () {
       if (running) {
-        fetch('/api/cancel', { method: 'POST' }).catch(function () {});
+        fetch(API + '/api/cancel', { method: 'POST' }).catch(function () {});
         running = false; if (es) es.close();
         btn.textContent = 'Export MP4'; btn.classList.remove('on');
         reset();
@@ -193,11 +256,29 @@
       if (e.code === 'Escape' && back.classList.contains('on')) { e.stopPropagation(); close(); }
     }, true);
 
-    /* take the button over: drop the page's tab-recording listener */
-    var fresh = btn.cloneNode(true);
-    fresh.title = 'Renders the film offline, frame by frame, at full quality';
-    btn.parentNode.replaceChild(fresh, btn);
-    btn = fresh;
+    /* the page's own #rec button keeps its tab-recording behaviour untouched;
+       ours sits next to it and is the one that renders properly */
+    btn = document.createElement('button');
+    btn.className = (recBtn.className ? recBtn.className + ' ' : '') + 'xp-btn';
+    btn.id = 'xpexport';
+    btn.title = 'Renders the film offline, frame by frame, at full quality';
+    btn.innerHTML =
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M8 1.6v8.2M4.6 6.6 8 10l3.4-3.4M1.8 11.4v1.6a1.4 1.4 0 0 0 1.4 1.4h9.6a1.4 1.4 0 0 0 1.4-1.4v-1.6"/>' +
+      '</svg><span>Export video</span>';
     btn.addEventListener('click', open);
+    recBtn.parentNode.insertBefore(btn, recBtn);
+
+    /* the old button becomes the clearly-labelled fallback */
+    recBtn.classList.add('ghost');
+    recBtn.textContent = 'Record tab';
+    recBtn.title = 'Lower-quality fallback: records this tab with MediaRecorder';
+
+    tabBtn.onclick = function () { close(); recBtn.click(); };
+    retry.onclick = function () {
+      retry.textContent = 'Checking…';
+      probe().then(status, status).then(function () { retry.textContent = 'Retry'; });
+    };
   }
 })();

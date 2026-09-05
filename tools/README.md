@@ -21,11 +21,19 @@ npm install       # once
 npm run studio    # http://127.0.0.1:5173/kwings/reel.html
 ```
 
-Open a reel from that address and its **Export MP4** button opens a render panel:
+Open a reel from that address and the **Export video** button in the transport
+bar opens a render panel:
 pick Draft / Final / Ultra, optionally a time range, hit Render. The page hands
 the job to the offline exporter on the server, shows live progress (frame count,
 render rate, ETA — mirrored on the button itself), and downloads the finished
 file when it lands. Stop cancels mid-render.
+
+**Already using VS Code Live Server (port 5501)?** Keep doing that — just run
+`npm run studio` alongside it. The page looks for the render server on its own
+origin first, then on `127.0.0.1:5173`, and the server allows cross-origin calls,
+so the button works from either address. If the server isn't up, the panel says
+so and offers a Retry plus the page's old tab recording, which stays available
+as the **Record tab** button.
 
 | Preset | Settings | Use |
 |---|---|---|
@@ -33,9 +41,7 @@ file when it lands. Stop cancels mid-render.
 | Final | 60fps, CRF 14, slow | the delivery master |
 | Ultra | 60fps, CRF 10, 2× supersampled | thin type and 3D edges, ~4× slower |
 
-Served any other way (`file://`, a static host) the button silently keeps the
-page's original tab-recording fallback, so nothing breaks when the reel is
-shared as plain HTML.
+
 
 ## Use from the CLI
 

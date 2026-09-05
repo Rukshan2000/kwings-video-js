@@ -81,14 +81,24 @@ function startJob(opts) {
   return job;
 }
 
+/* the reels are often opened from another dev server (VS Code Live Server, …),
+   so the API and the finished files have to be reachable cross-origin */
+const CORS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'content-type',
+  'access-control-allow-methods': 'GET,POST,OPTIONS',
+};
+
 function json(res, code, body) {
-  res.writeHead(code, { 'content-type': 'application/json' });
+  res.writeHead(code, { 'content-type': 'application/json', ...CORS });
   res.end(JSON.stringify(body));
 }
 
 createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   const path = decodeURIComponent(url.pathname);
+
+  if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
 
   /* ---- API ---- */
   if (path === '/api/health') return json(res, 200, { studio: true, busy: !!(job && job.proc) });
@@ -120,6 +130,7 @@ createServer((req, res) => {
       'content-type': 'text/event-stream',
       'cache-control': 'no-cache',
       connection: 'keep-alive',
+      ...CORS,
     });
     if (!job) { res.write(`data: ${JSON.stringify({ type: 'idle' })}\n\n`); return res.end(); }
     for (const evt of job.log) res.write(`data: ${JSON.stringify(evt)}\n\n`);   // replay
@@ -137,7 +148,7 @@ createServer((req, res) => {
   }
   const size = statSync(file).size;
   const type = MIME[extname(file).toLowerCase()] || 'application/octet-stream';
-  const headers = { 'content-type': type, 'accept-ranges': 'bytes', 'cache-control': 'no-store' };
+  const headers = { 'content-type': type, 'accept-ranges': 'bytes', 'cache-control': 'no-store', ...CORS };
   if (path.startsWith('/exports/')) headers['content-disposition'] = `attachment; filename="${basename(file)}"`;
 
   /* range requests, so <audio> and <video> can seek */
